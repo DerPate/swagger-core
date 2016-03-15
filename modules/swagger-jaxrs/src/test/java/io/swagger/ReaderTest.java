@@ -20,6 +20,11 @@ public class ReaderTest {
     private static final String APPLICATION_XML = "application/xml";
     private static final String TEXT_PLAIN = "text/plain";
     private static final String TEXT_HTML = "text/html";
+    private static final String TEXT_XML = "text/xml";
+    private static final String TEXT_JSON = "text/json";
+    private static final String CHARSET8 = ";charset=UTF-8";
+    private static final String TEXT_XML_CHARSET = TEXT_XML + CHARSET8;
+    private static final String TEXT_HTML_CHARSET = TEXT_HTML + CHARSET8;
 
     @Test(description = "scan methods")
     public void scanMethods() {
@@ -39,9 +44,13 @@ public class ReaderTest {
         assertEquals(getGet(swagger, "/{id}").getConsumes().get(0), MediaType.APPLICATION_XHTML_XML);
         assertEquals(getGet(swagger, "/{id}").getProduces().get(0), MediaType.APPLICATION_ATOM_XML);
         assertEquals(getGet(swagger, "/{id}/value").getConsumes().get(0), APPLICATION_XML);
+        assertEquals(getGet(swagger, "/{id}/value").getConsumes().get(1), TEXT_HTML_CHARSET);
         assertEquals(getGet(swagger, "/{id}/value").getProduces().get(0), TEXT_PLAIN);
+        assertEquals(getGet(swagger, "/{id}/value").getProduces().get(1), TEXT_XML_CHARSET);
         assertEquals(getPut(swagger, "/{id}").getConsumes().get(0), MediaType.APPLICATION_JSON);
+        assertEquals(getPut(swagger, "/{id}").getConsumes().get(1), TEXT_HTML_CHARSET);
         assertEquals(getPut(swagger, "/{id}").getProduces().get(0), TEXT_PLAIN);
+        assertEquals(getPut(swagger, "/{id}").getProduces().get(1), TEXT_XML_CHARSET);
         assertEquals(getPut(swagger, "/{id}/value").getConsumes().get(0), APPLICATION_XML);
         assertEquals(getPut(swagger, "/{id}/value").getProduces().get(0), TEXT_PLAIN);
     }
@@ -281,6 +290,21 @@ public class ReaderTest {
         assertTrue(operation.getResponses().containsKey("400"));
         assertTrue(operation.getResponses().containsKey("404"));
         assertTrue(operation.getResponses().containsKey("409"));
+    }
+
+    @Test(description = "scan resource with annotated exception")
+    public void scanDeclaredExceptionsAndCombineWithMethodResponsesClassLevel() {
+        Swagger swagger = getSwagger(ResourceWithCustomExceptionAndClassLevelApiResource.class);
+        assertNotNull(swagger);
+
+        Operation operation = getPut(swagger, "/{id}");
+        assertEquals(operation.getResponses().size(), 5);
+        assertTrue(operation.getResponses().containsKey("200"));
+        assertTrue(operation.getResponses().containsKey("400"));
+        assertTrue(operation.getResponses().containsKey("404"));
+        assertTrue(operation.getResponses().containsKey("403"));
+        assertTrue(operation.getResponses().containsKey("409"));
+        assertEquals(operation.getResponses().get("409").getDescription(), "Conflict");
     }
 
     private Swagger getSwagger(Class<?> cls) {
